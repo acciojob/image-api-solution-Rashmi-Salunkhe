@@ -1,50 +1,77 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Image Processing API</title>
 </head>
-
 <body>
 	<h1>Image Processing API</h1>
 
+	<!-- Form for uploading image -->
 	<form>
-		<input type="file" id="imageInput">
+		<input type="file" id="imageInput" accept="image/*">
 		<button type="button" onclick="processImage()">Process Image</button>
 	</form>
 
+	<!-- Placeholder for original and processed images -->
+	<br>
+	<img id="originalImage" alt="Original Image" style="max-width: 300px;">
+	<br>
+	<img id="processedImage" alt="Processed Image" style="max-width: 300px;">
 	<br>
 
-	<img id="originalImage">
-	<br>
-	<img id="processedImage">
+	<!-- Placeholder for color information -->
+	<p id="colorInfo"></p>
 
 	<script>
 		const processImage = () => {
-			const file = document.getElementById('imageInput').files[0];
+			const fileInput = document.getElementById('imageInput');
+			const file = fileInput.files[0];
+
+			// Validate if an image has been selected
+			if (!file) {
+				alert('Please select an image to process');
+				return;
+			}
+
+			// Display the original image
+			const originalImage = document.getElementById('originalImage');
+			originalImage.src = URL.createObjectURL(file);
+
+			// Imagga API for color extraction (API_KEY and API_SECRET must be replaced with actual values)
+			const apiKey = 'your_api_key';
+			const apiSecret = 'your_api_secret';
 			const url = 'https://api.imagga.com/v2/colors';
 
 			const formData = new FormData();
 			formData.append('image', file);
 
+			// Making the API request
 			fetch(url, {
 				method: 'POST',
 				body: formData,
 				headers: {
-					'Authorization': 'Basic ' + btoa('api_key:api_secret')
+					'Authorization': 'Basic ' + btoa(apiKey + ':' + apiSecret)
 				}
 			})
-				.then(response => response.json())
-				.then(data => {
-					const originalImage = document.getElementById('originalImage');
-					const processedImage = document.getElementById('processedImage');
+			.then(response => response.json())
+			.then(data => {
+				const colorInfo = data.result.colors.image_colors;
 
-					originalImage.src = URL.createObjectURL(file);
-					processedImage.src = data.result.colors.image_colors[0].closest_palette_color_html;
-				})
-				.catch(error => console.error(error));
+				// Display the processed color palette
+				const processedImage = document.getElementById('processedImage');
+				processedImage.style.backgroundColor = colorInfo[0].closest_palette_color_html;
+				processedImage.alt = 'Closest Color: ' + colorInfo[0].closest_palette_color;
+
+				// Display color information
+				document.getElementById('colorInfo').textContent = `Closest color: ${colorInfo[0].closest_palette_color}`;
+			})
+			.catch(error => {
+				console.error('Error processing image:', error);
+				alert('Error processing the image. Please try again.');
+			});
 		};
 	</script>
 </body>
-
 </html>
